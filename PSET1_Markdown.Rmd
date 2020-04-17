@@ -1,7 +1,9 @@
 ---
-output: 
-  md_document:
-    preserve_yaml: false
+output:
+   html_document:
+      self_contained: false
+      keep_md: true
+      preserve_yaml: false
 ---
 <center>
 
