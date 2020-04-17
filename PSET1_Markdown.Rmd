@@ -1,7 +1,7 @@
 ---
 output: 
-  md_document
-    preserve_yaml = FALSE
+  md_document:
+    preserve_yaml: false
 ---
 <center>
 
@@ -23,7 +23,7 @@ rm(list=ls())
 options(scipen = 999)
 
 library(readxl);library(dplyr);library(ggplot2);library(plotly)
-library(tidyr);library(knitr);library(kableExtra); library(stringr)
+library(tidyr);library(knitr);library(kableExtra);library(stringr)
 
 d<-read_excel("Pine Street Inn Length of Stay Data - Solutions.xls", 
               sheet = 1, cell_cols(1:2))
@@ -117,7 +117,6 @@ p<-ggplot(g,aes(x=bin, y=percent, group = stat, color=stat))+
   scale_x_discrete(labels = function(x) str_wrap(x, width = 8))
 
 ggplotly(p)
-
 ```
 
 
