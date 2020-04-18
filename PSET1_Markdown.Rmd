@@ -1,20 +1,14 @@
 ---
+title: "Harvard Kennedy School - API 201z"
+subtitle: "Problem Set #1"
+author: "Nolin Greene"
+date: "April 18, 2020"
 output:
-   html_document:
-      self_contained: false
-      keep_md: true
-      preserve_yaml: false
+  markdown:
+    keep_md: true
+    preserve_yaml: false
 ---
-<center>
-
-## Harvard Kennedy School
 ***
-### API 201Z: Fall 2020
-#### Problem Set #1 - March 26, 2020
-#### __Nolin Greene__
-
-</center>
-
 __Question #1: Case Study - Pine Street Inn__
 
 *Data and Package Loading (output masked for readability purposes)*
@@ -45,7 +39,7 @@ colnames(d)<-c("n","los")
 *1.6:* There are **`r nrow(d)` guests** represented in the dataset.
 
 *1.7* 
-```{r}
+```{r, echo = F}
 d%>%
   filter(los<=3) %>%
   summarize(n=n(), bednights=sum(los))
