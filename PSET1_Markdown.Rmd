@@ -95,7 +95,8 @@ kable(one7,
       format.args = list(big.mark = ","),
       row.names = F,
       col.names = names_spaced, 
-      escape = F) %>%
+      escape = F,
+      caption = "Guest & Bed Night Statistics by Length of Stay Category") %>%
 kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
 
 ```
@@ -128,8 +129,6 @@ p<-ggplot(g,aes(x=bin, y=percent, group = stat, color=stat))+
   theme(legend.title = element_blank()) +
   labs(x="Length of Stay", y="Percent of Total", title = "Total Clients and Bednights by Length of Stay")+
   scale_x_discrete(labels = function(x) str_wrap(x, width = 8))
-
-ggplotly(p)
 ```
 
 
@@ -192,12 +191,96 @@ The above code found rows whose item codes are related to Health, Education or C
 *E.* One reason we need to look at combined state and local expenditures is because different states have different frameworks for allocating governmental responsibilities within policy areas. For example, some states might take on the majority of the financial and administrative burden for maintaining corrections, while other states might cede that authority to the local level. 
 
 #### Adding on State Names
-```{r, add statenames}
-statenames<-read.csv("statenames.csv", colClasses = c(state = "character", names = "character"))
+```{r, add statenames, warning=FALSE}
+statenames<-read.csv("statenames.csv", colClasses = c(state = "character", names = "character", pop = "numeric"))
 state_exp<-left_join(state_exp, statenames, by = "state")
-spendclean<-filter(state_exp,state != "00")[,2:4]
+spendclean<-filter(state_exp,state != "00")[,2:5]
 ```
 
 *F.* The data are now represented in millions. We converted them from thousands to millions by dividing the original value by 1000.
 
 *G*
+```{r add per capita statistics}
+spendclean<-spendclean %>%
+  mutate(per_capita = sum*1000000/pop)
+```
+
+*H*
+```{r create summary table of per capita statistics, echo = FALSE}
+pc_corrections<-filter(spendclean, cat == "Corrections")$per_capita
+pc_health<-filter(spendclean, cat == "Health")$per_capita
+pc_educ<-filter(spendclean, cat == "Education")$per_capita
+
+sum_stats<-data.frame(Mean = c(mean(pc_health), mean(pc_educ), mean(pc_corrections)),
+           Std_Dev = c(sd(pc_health), sd(pc_educ), sd(pc_corrections)),
+           Median = c(median(pc_health), median(pc_educ), median(pc_corrections)),
+           IQR = c(IQR(pc_health), IQR(pc_educ), IQR(pc_corrections)), row.names = 
+             c("Health", "Education", "Corrections"))
+
+kable(sum_stats,
+      format.args = list(big.mark = ","),
+      row.names = T,
+      digits = 1,
+      caption = "Summary Statistics for State Per Capita Spending",
+      escape = F) %>%
+kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+*I(i)* The formula for the variance of health spending can be denoted by the following:  
+$\sigma^{2} = \frac{\sum\limits_{i=1}^{n} \left(x_{i} - \overline{x}\right)^{2}} {n-1}$
+
+*I(ii)* The variance is the sum of the squared differences of each observation and the mean, divided by the number of observations minus 1.
+
+*I(ii)* 
+```{r calculate variance longform}
+x1<-mean(pc_health)
+x2<-pc_health-x1
+x3<-x2^2
+
+sum(x3)/length(x3)-1
+sqrt(sum(x3)/length(x3)-1)
+```
+
+*J* 
+```{r make first scatterplot of sum spending, echo= FALSE}
+spendclean_wide<-pivot_wider(spendclean, names_from = cat, values_from = c("sum", "per_capita"))
+ggplot(spendclean_wide, aes(sum_Health, sum_Education))+
+  geom_point(col = "slategrey", alpha =0.4)+
+  labs(title = "State Spending on Education and Health - Plot 1", subtitle = "Total Spending per State")+xlab("Health Spending")+ylab("Education Spending") +theme_light()
+
+```
+The plot shows a strong postiive correlation between total education and health spending. This is to be expeceted because the larger the population of the state, the more they are likely to spend on both education and health. 
+
+```{r make second scatterplot of per capita spending, echo= FALSE}
+ggplot(spendclean_wide, aes(per_capita_Health, per_capita_Education))+
+  geom_point(col = "slategrey", alpha =0.4)+
+  labs(title = "State Spending on Education and Health - Plot 2", subtitle = "Per Capita Spending per State")+xlab("Health Spending")+ylab("Education Spending") +theme_light()
+
+```
+TThere is no immediate relationship between per capita Health spending and per capital Education spending (though a few outliers may skew the relationship slightly positive). The plot shows a strong postiive correlation between total education and health spending. This is to be expected though since different states may have different priorities with regards to health and education and may fund them at different levels relative to the size of their populations. 
+
+*K* 
+```{r histogram of pc_corrections, echo=F}
+ggplot(spendclean_wide, aes(x=per_capita_Corrections))+
+  geom_histogram(aes(y=..density..),color = "grey4", fill = "slategrey", bins = 15)+ labs(title = "Histogram of Per Capita Corrections Spending")+xlab("Per Capita Spending")+ylab("Density") +theme_light()
+```
+
+*L* 
+```{r Adjust Alaska}
+spendclean_alaska<-mutate(spendclean_wide, per_capita_Corrections = ifelse(names == "Alaska", 10000, per_capita_Corrections))
+
+sum_stats_alaska<-data.frame(Mean = c(mean(spendclean_alaska$per_capita_Corrections)),
+           Std_Dev = c(sd(spendclean_alaska$per_capita_Corrections)),
+           Median = c(median(spendclean_alaska$per_capita_Corrections)),
+           IQR = c(IQR(spendclean_alaska$per_capita_Corrections)),
+           row.names ="Corrections")
+
+kable(sum_stats_alaska,
+      row.names = T,
+      digits = 1,
+      caption = "Summary Statistics for Per Capita Corrections Spending - Inflated Alaska Example",
+      escape = F)%>%
+kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+The median and the IQR remain unchanged from the original per capita corrections summary, but the mean and the standard deviation have increased dramatically due to Alaska now being a considerable outlier in the dataset.
