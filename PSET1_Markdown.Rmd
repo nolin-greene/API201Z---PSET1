@@ -3,16 +3,20 @@ title: "Harvard Kennedy School - API 201z"
 subtitle: "Problem Set #1"
 author: "Nolin Greene"
 date: "April 18, 2020"
-output:
-  markdown:
-    keep_md: true
-    preserve_yaml: false
+output: 
+  html_document:
+    preserve_md: TRUE
 ---
 ***
-__Question #1: Case Study - Pine Street Inn__
 
-*Data and Package Loading (output masked for readability purposes)*
+### Preparations: 
 
+#### Operating System & Software Used:
+* MacBook Pro (Retina, 13-inch, Late 2013)  
+* macOS Catalina 10.15.4  
+* RStudio Version 1.2.5003  
+
+#### Options & Packages Loaded:
 ```{r, loadpackages, message=FALSE}
 rm(list=ls())
 
@@ -20,12 +24,23 @@ options(scipen = 999)
 
 library(readxl);library(dplyr);library(ggplot2);library(plotly)
 library(tidyr);library(knitr);library(kableExtra);library(stringr)
+```
 
+
+***
+## Question #1: Case Study - Pine Street Inn
+
+#### Load Data:
+
+```{r load_data, message=FALSE}
 d<-read_excel("Pine Street Inn Length of Stay Data - Solutions.xls", 
               sheet = 1, cell_cols(1:2))
 
 colnames(d)<-c("n","los")
 ```
+
+#### Analysis:
+
 *1.1:* The mean length of stay at Pine Street Inn is **`r round(mean(d$los),0)` days**. 
 
 *1.2:* The median length of stay at Pine Street Inn is **`r round(median(d$los),0)` days**. 
@@ -34,12 +49,12 @@ colnames(d)<-c("n","los")
 
 *1.4:* The 75th percentile length of stay at Pine Street Inn is **`r round(quantile(d$los, probs=.75),0)` days.**  The 95th and 99th percentiles are **`r round(quantile(d$los, probs=.90),0)` days** and **`r round(quantile(d$los, probs=.95),0)` days** respectively
 
-*1.5:* There are **`r sum(d$los)` bednights** represented in the dataset.
+*1.5:* There are **`r format(sum(d$los), big.mark = ",")` bednights** represented in the dataset.
 
 *1.6:* There are **`r nrow(d)` guests** represented in the dataset.
 
 *1.7* 
-```{r, echo = F}
+```{r, rawdatafortable, include = FALSE}
 d%>%
   filter(los<=3) %>%
   summarize(n=n(), bednights=sum(los))
@@ -75,8 +90,10 @@ AvgBedNightsperGuest<-c(round(4973/3322,0),round(7329/1177,0),round(21007/1048,0
 one7<-data.frame(Length_of_Stay,Number_of_Guests,Number_of_Bed_Nights,Fraction_of_Guests,Fraction_of_Bed_Nights,AvgBedNightsperGuest, row.names = 1)
 one7<-rbind(one7, Total=c(sum(one7$Number_of_Guests),sum(one7$Number_of_Bed_Nights),"", "", "",""))
 names_spaced<-c("Number of <br>Guests", "Number of <br>Bed Nights", "Fraction <br>of Guests", "Fraction of <br>Bed Nights","Avg Bed Nights <br> per Guest")
+one7<-mutate_all(one7, as.numeric)
 kable(one7,
-      row.names = T,
+      format.args = list(big.mark = ","),
+      row.names = F,
       col.names = names_spaced, 
       escape = F) %>%
 kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
@@ -129,25 +146,33 @@ ggplot(d, aes(x=los))+
 
 ***
 
-__Question #2: State Spending Data__
+## Question #2: State Spending Data
 
 *A.* The total direct expenditure was $3.147tr. The total spent on Elementary and Secondary Education was $565bn, the total spent on Health was $84bn and the total spent on Corrections was $72.6bn.
 
-*B.*
-```{r, message=FALSE}
+*B.* The data are organized into columns separated by spaces. There appears to be five columns, with each row separated on a different line. The state code is contained in the row's first two characters (Delaware = "08") and the item code is contained in characters with position 5-7 (Construction for Primary & Secondary Education = "F12"). 
+
+*C.*
+This chunk downloads and extracts our zip file, and creates a data frame from it. 
+```{r, download & extract file, message=FALSE}
 temp <- tempfile()
 download.file("http://www2.census.gov/govs/local/11statetypepu.zip",temp)
 state_exp <- read.table(unz(temp, "11statetypepu.txt"))
-colnames(state_exp)<-c("govtype","itemcode","amount", "cv", "yr")
 unlink(temp)
 ```
 
-```{r}
-table(state_exp$yr)
-state_exp<-subset(state_exp, select = -yr)
-state_exp<-filter(state_exp, govtype == 1)
-state_exp<-subset(state_exp, select = -govtype)
+This chunk cleans and tidys our data. 
+```{r cleans & tidys data }
+colnames(state_exp)<-c("govtype","itemcode","amount", "cv", "yr")
+state_exp$govtype<-formatC(state_exp$govtype, width = 3, format = "d", flag = "0")
+state_exp<-transform(state_exp, state = substr(govtype,1,2), gov_level=substr(govtype, 3,3))
+state_exp<-filter(state_exp, gov_level == 1)
+state_exp<-select(state_exp, -govtype, -yr, -gov_level)
 state_exp$amount<-state_exp$amount/1000
+```
+
+This chunk creates three clear categories of spend and groups the rows by that spend and each state. 
+```{r creates categories & groups rows}
 state_exp<-state_exp %>%
   mutate(cat = case_when(
       itemcode=="E32" | itemcode=="F32" | itemcode=="G32" ~ "Health",
@@ -155,8 +180,24 @@ state_exp<-state_exp %>%
       itemcode=="E04" | itemcode=="F04" | itemcode=="G04" |
       itemcode=="E05" | itemcode=="F05" | itemcode=="G05" ~ "Corrections"))
 state_exp<-filter(state_exp, cat %in% c("Health", "Education", "Corrections"))
-state_exp %>%
-  group_by(cat)%>%
+state_exp <- state_exp %>%
+  group_by(state,cat)%>%
   summarize(sum = sum(amount))
 ```
 
+The above code found rows whose item codes are related to Health, Education or Corrections and summed all expenditures in the dataset by those groupings. The result is a simple data frame displaying how much was expended across the country for those three categories (in millions). 
+
+*D.* The categories of E32, F32 and G32 represent "Current Operations", Construction" and "Other Capital Outlays" for "other" health expenditures not otherwise captured in other item codes. 
+
+*E.* One reason we need to look at combined state and local expenditures is because different states have different frameworks for allocating governmental responsibilities within policy areas. For example, some states might take on the majority of the financial and administrative burden for maintaining corrections, while other states might cede that authority to the local level. 
+
+#### Adding on State Names
+```{r, add statenames}
+statenames<-read.csv("statenames.csv", colClasses = c(state = "character", names = "character"))
+state_exp<-left_join(state_exp, statenames, by = "state")
+spendclean<-filter(state_exp,state != "00")[,2:4]
+```
+
+*F.* The data are now represented in millions. We converted them from thousands to millions by dividing the original value by 1000.
+
+*G*
