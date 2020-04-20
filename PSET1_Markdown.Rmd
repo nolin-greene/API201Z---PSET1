@@ -1,12 +1,13 @@
 ---
-title: "Harvard Kennedy School - API 201z"
-author: "Nolin Greene"
-date: "April 18, 2020"
-output:
-  pdf_document: 
+title: "Harvard Kennedy School - API 201z"  
+subtitle: "Problem Set #1"    
+author: "Nolin Greene"  
+date: "April 18, 2020"  
+output: 
+  pdf_document: default
   html_document:
-    preserve_md: yes
-subtitle: 'Problem Set #1'
+    keep_md: yes
+always_allow_html: true
 ---
 ***
 
