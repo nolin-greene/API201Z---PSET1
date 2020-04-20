@@ -1,15 +1,19 @@
 ---
 title: "Harvard Kennedy School - API 201z"  
-subtitle: "Problem Set #1"    
-author: "Nolin Greene"  
-date: "April 18, 2020"  
-output: 
-  pdf_document: default
-  html_document:
-    keep_md: yes
+subtitle: "Problem Set #1"
+author: "Nolin Greene"
+date: "April 18, 2020"
+output: pdf_document
 always_allow_html: true
 ---
 ***
+```{r knitr chunks, include = FALSE}
+knitr::knit_hooks$set(document = function(x) {
+  sub('\\usepackage{graphicx, color}', '\\usepackage{graphicx,
+xcolor}', x, fixed = TRUE)
+}
+)
+```
 
 ### Preparations: 
 
@@ -126,10 +130,11 @@ count<-count[c(1,4,5)]
 
 g<-gather(count, stat, percent, -bin)
 
-p<-ggplot(g,aes(x=bin, y=percent, group = stat, color=stat))+
+ggplot(g,aes(x=bin, y=percent, group = stat, color=stat))+
   geom_line()+
   theme(legend.title = element_blank()) +
-  labs(x="Length of Stay", y="Percent of Total", title = "Total Clients and Bednights by Length of Stay")+
+  labs(x="Length of Stay", y="Percent of Total", 
+       title = "Total Clients and Bednights by Length of Stay")+
   scale_x_discrete(labels = function(x) str_wrap(x, width = 8))
 ```
 
@@ -139,7 +144,8 @@ p<-ggplot(g,aes(x=bin, y=percent, group = stat, color=stat))+
 ```{r}
 ggplot(d, aes(x=los))+
   geom_histogram(colour="black", fill = "slategray", binwidth = 10)+
-  labs(x="Length of Stay (days)", y="Number of Guests", title="Distribution of Guests by Length of Stay")
+  labs(x="Length of Stay (days)", y="Number of Guests", 
+       title="Distribution of Guests by Length of Stay")
 ```
 
 *1.9:* Simply by looking at the mean, one might infer that it is common for a PSI guest to spend 3-4 weeks in shelter. However, upon calculating additional statistics (median, IQR, historgram), we see that the distribution of length of stay is heavily right skewed, with a small number of guests having very long stays. This leads me to believe that Pine Street faces a very severe Pareto Principle, with a small number of guests occupying an extreme proportion of the shelter's total bed stays. 
@@ -166,7 +172,8 @@ This chunk cleans and tidys our data.
 ```{r cleans & tidys data }
 colnames(state_exp)<-c("govtype","itemcode","amount", "cv", "yr")
 state_exp$govtype<-formatC(state_exp$govtype, width = 3, format = "d", flag = "0")
-state_exp<-transform(state_exp, state = substr(govtype,1,2), gov_level=substr(govtype, 3,3))
+state_exp<-transform(state_exp, state = substr(govtype,1,2), 
+                     gov_level = substr (govtype, 3,3))
 state_exp<-filter(state_exp, gov_level == 1)
 state_exp<-select(state_exp, -govtype, -yr, -gov_level)
 state_exp$amount<-state_exp$amount/1000
@@ -194,7 +201,10 @@ The above code found rows whose item codes are related to Health, Education or C
 
 #### Adding on State Names
 ```{r, add statenames, warning=FALSE}
-statenames<-read.csv("statenames.csv", colClasses = c(state = "character", names = "character", pop = "numeric"))
+statenames<-read.csv("statenames.csv", 
+                     colClasses = c(state = "character", 
+                                    names = "character", 
+                                    pop = "numeric"))
 state_exp<-left_join(state_exp, statenames, by = "state")
 spendclean<-filter(state_exp,state != "00")[,2:5]
 ```
@@ -275,7 +285,8 @@ ggplot(spendclean_wide, aes(x=per_capita_Corrections))+
 
 *L* 
 ```{r Adjust Alaska}
-spendclean_alaska<-mutate(spendclean_wide, per_capita_Corrections = ifelse(names == "Alaska", 10000, per_capita_Corrections))
+spendclean_alaska<-mutate(spendclean_wide, per_capita_Corrections = ifelse(
+  names == "Alaska", 10000, per_capita_Corrections))
 
 sum_stats_alaska<-data.frame(Mean = c(mean(spendclean_alaska$per_capita_Corrections)),
            StdDev = c(sd(spendclean_alaska$per_capita_Corrections)),
@@ -286,7 +297,8 @@ sum_stats_alaska<-data.frame(Mean = c(mean(spendclean_alaska$per_capita_Correcti
 kable(sum_stats_alaska,
       row.names = T,
       digits = 1,
-      caption = "Summary Statistics for Per Capita Corrections Spending - Inflated Alaska Example",
+      caption = "Summary Statistics for Per Capita Corrections Spending 
+      - Inflated Alaska Example",
       escape = F)%>%
 kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
 ```
