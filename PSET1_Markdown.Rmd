@@ -214,7 +214,7 @@ pc_health<-filter(spendclean, cat == "Health")$per_capita
 pc_educ<-filter(spendclean, cat == "Education")$per_capita
 
 sum_stats<-data.frame(Mean = c(mean(pc_health), mean(pc_educ), mean(pc_corrections)),
-           Std_Dev = c(sd(pc_health), sd(pc_educ), sd(pc_corrections)),
+           StdDev = c(sd(pc_health), sd(pc_educ), sd(pc_corrections)),
            Median = c(median(pc_health), median(pc_educ), median(pc_corrections)),
            IQR = c(IQR(pc_health), IQR(pc_educ), IQR(pc_corrections)), row.names = 
              c("Health", "Education", "Corrections"))
@@ -278,7 +278,7 @@ ggplot(spendclean_wide, aes(x=per_capita_Corrections))+
 spendclean_alaska<-mutate(spendclean_wide, per_capita_Corrections = ifelse(names == "Alaska", 10000, per_capita_Corrections))
 
 sum_stats_alaska<-data.frame(Mean = c(mean(spendclean_alaska$per_capita_Corrections)),
-           Std_Dev = c(sd(spendclean_alaska$per_capita_Corrections)),
+           StdDev = c(sd(spendclean_alaska$per_capita_Corrections)),
            Median = c(median(spendclean_alaska$per_capita_Corrections)),
            IQR = c(IQR(spendclean_alaska$per_capita_Corrections)),
            row.names ="Corrections")
